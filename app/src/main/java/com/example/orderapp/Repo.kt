@@ -16,7 +16,7 @@ data class Order(val id: String = "", val userEmail: String = "", val item: Stri
 
 // Backend = Google Sheet via Apps Script web app. Paste your web app URL below.
 object Repo {
-    const val SCRIPT_URL = "PASTE_YOUR_WEB_APP_URL_HERE"
+    const val SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLvMxTYHRaLHrkZDSlfTth1MA2BfDqgf2-nPqy-FvSI-CoSlbrQiRLZk8XZ4CwM3HxJQ/exec"
     private lateinit var prefs: SharedPreferences
     fun init(c: Context) { prefs = c.getSharedPreferences("app", Context.MODE_PRIVATE) }
 
