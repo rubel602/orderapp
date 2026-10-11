@@ -1,45 +1,42 @@
-# Business Software ERP – Android app + Google Sheet
+# Business Software ERP – Android + Windows, ek-i GitHub repository
 
-Android app = ei ERP software ta WebView e chole (offline e kaj kore, data phone e thake).
-Google Sheet = data er backup / sync (Apps Script diye).
+```
+index.html          <- SOFTWARE ER ASOL FILE. Software bodlate shudhu eta bodlan
+android/            <- Android app (WebView) project
+windows/            <- Windows EXE (Electron) project
+apps-script/Code.gs <- Google Sheet sync script
+.github/workflows/  <- auto build + auto update
+```
+`index.html` ek-i file theke Android ar Windows duto-i toiri hoy. Software e notun kichu hole shudhu `index.html` bodlalei duto app notun hoye jay.
 
-## 1) APK banano (GitHub e)
-1. github.com e notun repository banan (jemon `business-software-android`).
-2. Ei folder er shob file (`.github`, `app`, `apps-script`, `build.gradle`, `settings.gradle`, `gradle.properties`) repository te upload korun (Add file -> Upload files).
-3. Repository -> **Settings -> General** e giye Public kore din (auto update er jonno). Tarpor **Actions** tab -> "Build Android APK" -> **Run workflow** (ba upload korlei auto chole).
-4. 3-5 minute por run er pashe **Artifacts -> BusinessSoftwareERP-apk** download korun, zip khulle `.apk` pabe.
-5. Phone e APK install korun (Settings e "Install unknown apps" allow korte hobe).
+## 1) Prothom bar setup
+1. github.com e notun repository banan, jemon `business-software`. **Public** rakhun (auto update er jonno).
+2. Ei zip er shob file (`.github` shoho) upload korun (Add file -> Upload files).
+3. **Actions** tab e "Build Android APK" ar "Build Windows EXE" duto-i nijei chalu hobe (na hole Run workflow). Android 3-5 min, Windows 5-8 min.
+4. Sesh hole repository er daan pashe **Releases** e duto release thakbe:
+   - **Android (latest)** -> `BusinessSoftwareERP.apk` (phone e install korun)
+   - **Windows (latest)** -> `BusinessSoftwareERP-Setup-1.0.x.exe` (computer e install korun)
+   Windows e "Windows protected your PC" ashle **More info -> Run anyway** (digital signature nei).
+5. Android: "Install unknown apps" allow korte hobe (prothom bar).
 
-Software e kono change korle `app/src/main/assets/index.html` file ta notun version diye replace korun, tarpor abar upload korun.
+## 2) Software bodle (update.zip)
+Ami notun `update.zip` dile:
+1. Repository -> **Add file -> Upload files** -> `update.zip` zip obosthay-i (khulben na) root e drag kore Commit.
+2. "Apply update.zip" workflow zip khule file bodlay, zip muche, Android + Windows duto-i abar build kore.
+3. Kichukkhon por phone ar computer e app khulle "New version available / Restart and update" ashbe.
+Ba nijei: repository te `index.html` file ta pencil/Upload diye replace kore Commit korun, eo duto build hoy.
 
-## Auto update (app nijei notun version khuje)
-- Protibar GitHub e kichu upload/commit korle workflow notun APK banay ar **Releases** e (v1, v2, v3 …) rakhe.
-- App khulle (6 ghonta por por) GitHub er latest Release dekhe. Notun version thakle "New version available" dekhay -> **Update now** -> download -> Install.
-- Prothom bar Android "Install unknown apps" allow korte bolbe, ekbar-i.
-- Shob build ek-i signing key (`app/release.jks`) diye hoy, tai update korle phone er data muche jay na.
-- **Repository ke Public rakhte hobe**, na hole app GitHub theke version dekhte parbe na (Private hole update auto hobe na, shudhu hate APK install korte hobe).
-- App er Data Backup -> Google Sheet sync card e "Check for update" button o ache.
+## 3) Auto update kibhabe
+- Android: app protie 6 ghonta e `android-latest` release er `version.txt` dekhe, notun thakle Update now dekhay.
+- Windows: installed app `win-latest` release er `latest.yml` dekhe, nijei download kore Restart and update dekhay.
+- Data (phone/computer e) update e muche jay na. Data Backup page e "Check for update" button o ache.
 
-## update.zip diye GitHub file auto update
-Software e notun kichu hole ami ekta `update.zip` dibo (bhitore notun `index.html` ar onno file, `.github` chhara).
-1. GitHub repository te jan -> **Add file -> Upload files**.
-2. `update.zip` file ta **zip obosthay-i** (khulben na) repository er shobar upore (root e) drag kore din -> Commit.
-3. "Apply update.zip" workflow nijei zip khule file bodle dey, zip muche dey, tarpor notun APK build kore Release e dey.
-4. Kichukkhon por phone e app khulle "New version available" ashbe.
-(Ei auto apply kaj korar jonno `.github/workflows/apply-update.yml` file ta prothom bar repository te thakte hobe. Ei zip e deya ache.)
-
-## 2) Google Sheet sync
-1. Google Sheet e jan -> **Extensions -> Apps Script**.
-2. `apps-script/Code.gs` er shob code paste korun. `SECRET` er jaiga e nijer ekta boro secret shobdo likhun.
-3. **Deploy -> New deployment -> Web app** -> Execute as: **Me**, Who has access: **Anyone** -> Deploy. (Prothom bar permission chaile Allow korun.)
-4. Web app URL ta copy korun.
-5. App e: **Data Backup -> Google Sheet sync** -> (URL age thekei boshano ache, bodlale notun URL din) shudhu Secret key boshan -> **Test connection** -> **Sync now**.
-6. "Auto-sync" tick dile data change hole protimin ute auto Sheet e jabe.
-7. Notun phone e / data hariye gele: ei sheet er URL ar key boshiye **Restore from Sheet**.
-
-Sheet e tab gulo: Customers, Suppliers, Products, Sales, Collections, Route Plan (porar jonno), ar ekta hidden `_data` tab (puro data, restore er jonno).
+## 4) Google Sheet
+1. Google Sheet -> Extensions -> Apps Script -> `apps-script/Code.gs` paste, `SECRET` bodlan.
+2. Deploy -> New deployment -> Web app -> Execute as: Me, Who has access: Anyone.
+3. App e Data Backup -> Google Sheet sync -> Secret key din (URL age thekei boshano), Test connection -> Sync now.
+Notun phone/computer e data anar jonno: Restore from Sheet.
 
 ## Shotorkota
-- Sheet e puro data thake, login password er hash shoho. Sheet ta private rakhun, keo er sathe share korben na.
-- Secret key ar URL jar kache thakbe se data pathate/niye nite pare.
-- App e data phone e thake. Sheet sync ekdik theke arekdike "replace" kore, tai ek-i somoy duto phone e kaj korle shesh sync jitbe.
+- Public repository te software er code (index.html) ar Android signing key (`android/app/release.jks`) sobai dekhte pabe. Apnar Sheet er Secret key repository te nei.
+- Duto app e ek-i data nei, protita device e nijer data thake. Data share korte Google Sheet sync use korun (shesh sync jitbe).
