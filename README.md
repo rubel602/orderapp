@@ -1,26 +1,29 @@
-# OrderApp (Android + Google Sheets backend)
+# Business Software ERP – Android app + Google Sheet
 
-Login/register, change password, create order, view orders + delivery status
-(PENDING -> APPROVED -> SHIPPED -> DELIVERED / REJECTED), and a Manager tab to approve/reject/update orders.
+Android app = ei ERP software ta WebView e chole (offline e kaj kore, data phone e thake).
+Google Sheet = data er backup / sync (Apps Script diye).
 
-## 1. Google Sheet backend
-1. Create a new Google Sheet.
-2. Extensions -> Apps Script. Replace the code with `apps-script/Code.gs`. Save.
-3. Deploy -> New deployment -> type **Web app** -> Execute as: **Me**, Who has access: **Anyone** -> Deploy. Authorize when asked.
-4. Copy the Web app URL (ends with `/exec`).
-5. In the app, open `Repo.kt` and paste it into `SCRIPT_URL`.
-Tabs Users / Orders / Sessions are created automatically on first use.
-(After editing Code.gs later: Deploy -> Manage deployments -> edit -> New version.)
+## 1) APK banano (GitHub e)
+1. github.com e notun repository banan (jemon `business-software-android`).
+2. Ei folder er shob file (`.github`, `app`, `apps-script`, `build.gradle`, `settings.gradle`, `gradle.properties`) repository te upload korun (Add file -> Upload files).
+3. Repository -> **Actions** tab -> "Build Android APK" -> **Run workflow** (ba upload korlei auto chole).
+4. 3-5 minute por run er pashe **Artifacts -> BusinessSoftwareERP-apk** download korun, zip khulle `.apk` pabe.
+5. Phone e APK install korun (Settings e "Install unknown apps" allow korte hobe).
 
-## 2. Make a manager
-Register the account in the app, then open the **Users** tab in the sheet and change that row's `role` from `user` to `manager`.
+Software e kono change korle `app/src/main/assets/index.html` file ta notun version diye replace korun, tarpor abar upload korun.
 
-## 3. Run
-Open the folder in Android Studio (generates the Gradle wrapper) and run on a device/emulator.
+## 2) Google Sheet sync
+1. Google Sheet e jan -> **Extensions -> Apps Script**.
+2. `apps-script/Code.gs` er shob code paste korun. `SECRET` er jaiga e nijer ekta boro secret shobdo likhun.
+3. **Deploy -> New deployment -> Web app** -> Execute as: **Me**, Who has access: **Anyone** -> Deploy. (Prothom bar permission chaile Allow korun.)
+4. Web app URL ta copy korun.
+5. App e: **Data Backup -> Google Sheet sync** -> URL ar Secret key boshan -> **Test connection** -> **Sync now**.
+6. "Auto-sync" tick dile data change hole protimin ute auto Sheet e jabe.
+7. Notun phone e / data hariye gele: ei sheet er URL ar key boshiye **Restore from Sheet**.
 
-## 4. Push to GitHub
-    git init && git add . && git commit -m "Initial commit"
-    git branch -M main
-    git remote add origin https://github.com/<you>/OrderApp.git
-    git push -u origin main
-Tip: keep your web app URL out of public repos (anyone with it can call your API).
+Sheet e tab gulo: Customers, Suppliers, Products, Sales, Collections, Route Plan (porar jonno), ar ekta hidden `_data` tab (puro data, restore er jonno).
+
+## Shotorkota
+- Sheet e puro data thake, login password er hash shoho. Sheet ta private rakhun, keo er sathe share korben na.
+- Secret key ar URL jar kache thakbe se data pathate/niye nite pare.
+- App e data phone e thake. Sheet sync ekdik theke arekdike "replace" kore, tai ek-i somoy duto phone e kaj korle shesh sync jitbe.
