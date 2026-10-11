@@ -1,0 +1,57 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - 'update.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use the shared index.html
+        run: |
+          mkdir -p windows/app
+          cp index.html windows/app/index.html
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install
+        working-directory: windows
+        run: npm install
+
+      - name: Set version and update address
+        working-directory: windows
+        run: |
+          npm version 1.0.${{ github.run_number }} --no-git-tag-version
+          node -e "const fs=require('fs'),p=JSON.parse(fs.readFileSync('package.json'));p.build.publish.url='https://github.com/${{ github.repository }}/releases/download/win-latest';fs.writeFileSync('package.json',JSON.stringify(p,null,2))"
+
+      - name: Build EXE
+        working-directory: windows
+        run: npx electron-builder --win --publish never
+
+      - name: Upload EXE (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BusinessSoftwareERP-windows
+          path: windows/dist/*.exe
+
+      # fixed release "win-latest": the installed app reads latest.yml + the installer from here
+      - name: Publish to release win-latest
+        run: |
+          gh release view win-latest >/dev/null 2>&1 || gh release create win-latest --title "Windows (latest)" --notes "Always the newest Windows installer. The app updates itself from here."
+          gh release upload win-latest windows/dist/latest.yml windows/dist/BusinessSoftwareERP-Setup-*.exe windows/dist/BusinessSoftwareERP-Portable-*.exe --clobber
