@@ -1,6 +1,22 @@
 package com.rubel.bizsoft;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.provider.Settings;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -162,6 +178,14 @@ public class MainActivity extends Activity {
 
         if (b == null) web.loadUrl(START_URL);
         else web.restoreState(b);
+
+        // automatic update check (at most once every 6 hours)
+        SharedPreferences sp = getSharedPreferences("upd", MODE_PRIVATE);
+        long now = System.currentTimeMillis();
+        if (now - sp.getLong("last", 0) > 6L * 3600 * 1000) {
+            sp.edit().putLong("last", now).apply();
+            checkUpdate(false);
+        }
     }
 
     private void openExternal(Uri u) {
@@ -174,8 +198,125 @@ public class MainActivity extends Activity {
         }
     }
 
+
+    // ---------------------------------------------------------------- auto update
+    /** Looks at the latest GitHub release of this repository and offers the new APK. */
+    private void checkUpdate(final boolean manual) {
+        if (BuildConfig.GITHUB_REPO.isEmpty()) {
+            if (manual) toast("Update source is not set. Build the app with GitHub Actions.");
+            return;
+        }
+        new Thread(() -> {
+            try {
+                URL u = new URL("https://api.github.com/repos/" + BuildConfig.GITHUB_REPO + "/releases/latest");
+                HttpURLConnection c = (HttpURLConnection) u.openConnection();
+                c.setConnectTimeout(8000);
+                c.setReadTimeout(8000);
+                c.setRequestProperty("Accept", "application/vnd.github+json");
+                if (c.getResponseCode() != 200) throw new Exception("HTTP " + c.getResponseCode());
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()))) {
+                    String line;
+                    while ((line = r.readLine()) != null) sb.append(line);
+                }
+                JSONObject j = new JSONObject(sb.toString());
+                final String tag = j.getString("tag_name");
+                int v = Integer.parseInt(tag.replaceAll("[^0-9]", ""));
+                String apk = null;
+                JSONArray as = j.optJSONArray("assets");
+                if (as != null) {
+                    for (int i = 0; i < as.length(); i++) {
+                        JSONObject a = as.getJSONObject(i);
+                        if (a.getString("name").endsWith(".apk")) {
+                            apk = a.getString("browser_download_url");
+                            break;
+                        }
+                    }
+                }
+                final String apkUrl = apk;
+                if (v > BuildConfig.VERSION_CODE && apkUrl != null) {
+                    runOnUiThread(() -> askUpdate(tag, apkUrl));
+                } else if (manual) {
+                    runOnUiThread(() -> toast("You have the latest version (" + BuildConfig.VERSION_NAME + ")"));
+                }
+            } catch (Exception e) {
+                if (manual) runOnUiThread(() -> toast("Could not check for updates. Is the repository public and online?"));
+            }
+        }).start();
+    }
+
+    private void askUpdate(String tag, final String apkUrl) {
+        if (isFinishing()) return;
+        new AlertDialog.Builder(this)
+            .setTitle("New version available")
+            .setMessage("A new version (" + tag + ") of Business Software ERP is ready. Your data stays on this phone.")
+            .setPositiveButton("Update now", (d, w) -> downloadUpdate(apkUrl))
+            .setNegativeButton("Later", null)
+            .show();
+    }
+
+    private void downloadUpdate(String apkUrl) {
+        if (!getPackageManager().canRequestPackageInstalls()) {
+            toast("Allow \"Install unknown apps\" for this app, then tap Update again");
+            startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName())));
+            return;
+        }
+        try {
+            final File f = new File(getExternalFilesDir(null), "update.apk");
+            if (f.exists()) f.delete();
+            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            DownloadManager.Request r = new DownloadManager.Request(Uri.parse(apkUrl));
+            r.setTitle("Business Software ERP update");
+            r.setMimeType("application/vnd.android.package-archive");
+            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            r.setDestinationUri(Uri.fromFile(f));
+            final long id = dm.enqueue(r);
+            toast("Downloading update…");
+            BroadcastReceiver rc = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context c, Intent i) {
+                    if (i.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) != id) return;
+                    try {
+                        unregisterReceiver(this);
+                    } catch (Exception ignore) {
+                    }
+                    installApk(f);
+                }
+            };
+            ContextCompat.registerReceiver(this, rc, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), ContextCompat.RECEIVER_EXPORTED);
+        } catch (Exception e) {
+            toast("Update download failed");
+        }
+    }
+
+    private void installApk(File f) {
+        try {
+            Uri u = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", f);
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(u, "application/vnd.android.package-archive");
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            toast("Could not start the installer");
+        }
+    }
+
+    private void toast(String m) {
+        Toast.makeText(this, m, Toast.LENGTH_LONG).show();
+    }
+
     /** Called from JavaScript to save generated files (backup, Excel, PDF...) into Downloads. */
     public class Bridge {
+        @JavascriptInterface
+        public String version() {
+            return BuildConfig.VERSION_NAME;
+        }
+
+        @JavascriptInterface
+        public void checkUpdate() {
+            MainActivity.this.checkUpdate(true);
+        }
+
         @JavascriptInterface
         public void save(final String dataUrl, final String name, final String mime) {
             runOnUiThread(() -> {
