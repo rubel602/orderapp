@@ -2,12 +2,12 @@
 
 ## Quick download
 
-- **Android APK — direct download:** https://github.com/rubel602/orderapp/releases/download/android-latest/BusinessSoftwareERP.apk
-- **Android download page:** https://github.com/rubel602/orderapp/releases/tag/android-latest
+- **Android APK — direct download:** https://github.com/rubel602/orderapp/releases/latest/download/BusinessSoftwareERP.apk
+- **Android releases/download page:** https://github.com/rubel602/orderapp/releases
+- **Android build status:** https://github.com/rubel602/orderapp/actions/workflows/android.yml
 - **Windows installer:** https://github.com/rubel602/orderapp/releases/download/win-latest/BusinessSoftwareERP-Setup-1.0.6.exe
-- **Build status / older APK artifact:** https://github.com/rubel602/orderapp/actions/workflows/android.yml
 
-If the direct Android link does not download, open the Android download page above and tap `BusinessSoftwareERP.apk) under Assets. On your phone, open the downloaded APK from Downloads and allow your browser/file manager to install unknown apps if Android asks.
+If the direct Android link does not download, open the releases page above, open the newest **Android APK** release, and tap `BusinessSoftwareERP.apk` under Assets. On your phone, open the downloaded APK from Downloads and allow your browser/file manager to install unknown apps if Android asks.
 
 ## Project structure
 
@@ -19,14 +19,16 @@ apps-script/Code.gs <- Google Sheet sync script
 .github/workflows/  <- automatic build workflows
 ```
 
-The Android workflow now builds a signed APK, gives it a stable download filename, and publishes it to the `android-latest` GitHub Release so it can be downloaded without opening the Actions artifact ZIP. Each new successful build replaces the APK attached to that release.
+## Android build and download
+
+Every push to `main` runs **Build Android APK**. It builds a signed APK, uploads a 90-day workflow artifact for troubleshooting, and creates a versioned Android release. Use the direct download link above to download the APK file without downloading an Actions artifact ZIP.
 
 ## Updating the software
 
 1. Update `index.html` in the repository.
 2. Commit the change to `main`.
 3. Open Actions and wait for **Build Android APK** to finish successfully.
-4. Download the new APK using the direct link above.
+4. Download the APK using the direct link above.
 
 ## Google Sheet sync
 
