@@ -24,6 +24,12 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Use the shared latest software source
+        run: |
+          mkdir -p app/src/main/assets
+          cp index.html app/src/main/assets/index.html
+          test -s app/src/main/assets/index.html
+
       - name: Build signed Android APK
         env:
           APP_VERSION_CODE: ${{ github.run_number }}
