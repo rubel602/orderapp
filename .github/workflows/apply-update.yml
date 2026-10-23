@@ -1,10 +1,11 @@
-name: Apply update.zip
+name: Apply update ZIP
 
 on:
   push:
     branches: [ main, master ]
     paths:
       - 'update.zip'
+      - 'update (1).zip'
   workflow_dispatch:
 
 permissions:
@@ -17,26 +18,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract update.zip
+      - name: Find and extract update ZIP
         run: |
-          if [ ! -f update.zip ]; then echo "No update.zip found"; exit 0; fi
-          unzip -o update.zip -x '.github/*' '__MACOSX/*'
-          rm -f update.zip
+          set -e
+          if [ -f "update.zip" ]; then
+            UPDATE_FILE="update.zip"
+          elif [ -f "update (1).zip" ]; then
+            UPDATE_FILE="update (1).zip"
+          else
+            echo "No update.zip or update (1).zip found"
+            exit 1
+          fi
+          unzip -o "$UPDATE_FILE" -x '.github/*' '__MACOSX/*'
+          rm -f "update.zip" "update (1).zip"
 
-      - name: Commit changes
+      - name: Commit applied changes
+        id: commit
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "Nothing changed"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing changed after extracting the ZIP."
           else
-            git commit -m "Apply update.zip"
+            git commit -m "Apply uploaded update ZIP"
             git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # pushes made with the default token do not start other workflows, so start the build here
-      - name: Start APK build
+      - name: Start Android APK build
+        if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run android.yml
+        run: gh workflow run android.yml --ref "${GITHUB_REF_NAME}"
+
+      - name: Start Windows EXE build
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build-windows.yml --ref "${GITHUB_REF_NAME}"
