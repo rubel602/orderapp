@@ -41,17 +41,14 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Publish stable direct download
+      - name: Publish APK release with versioned tag
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view android-latest >/dev/null 2>&1; then
-            gh release upload android-latest BusinessSoftwareERP.apk --clobber
-          else
-            gh release create android-latest BusinessSoftwareERP.apk \
-              --title "Android (latest)" \
-              --notes "Latest signed Android APK for Business Software ERP. Download BusinessSoftwareERP.apk and install it on your Android phone."
-          fi
+          TAG="android-v${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" BusinessSoftwareERP.apk \
+            --title "Android APK ${GITHUB_RUN_NUMBER}" \
+            --notes "Signed Android APK built from commit ${GITHUB_SHA}. For the newest APK, use https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BusinessSoftwareERP.apk"
 
       - name: Remove older Android APK artifacts
         env:
