@@ -50,8 +50,14 @@ jobs:
           name: BusinessSoftwareERP-windows
           path: windows/dist/*.exe
 
-      # fixed release "win-latest": the installed app reads latest.yml + the installer from here
-      - name: Publish to release win-latest
+      - name: Publish only the newest Windows version
         run: |
           gh release view win-latest >/dev/null 2>&1 || gh release create win-latest --title "Windows (latest)" --notes "Always the newest Windows installer. The app updates itself from here."
           gh release upload win-latest windows/dist/latest.yml windows/dist/BusinessSoftwareERP-Setup-*.exe windows/dist/BusinessSoftwareERP-Portable-*.exe --clobber
+          current_version="1.0.${{ github.run_number }}"
+          gh release view win-latest --json assets --jq '.assets[].name' | while IFS= read -r asset; do
+            case "$asset" in
+              latest.yml|"BusinessSoftwareERP-Setup-$current_version.exe"|"BusinessSoftwareERP-Portable-$current_version.exe") ;;
+              *.exe) gh release delete-asset win-latest "$asset" --yes ;;
+            esac
+          done
