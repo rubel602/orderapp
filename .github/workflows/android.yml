@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
@@ -24,14 +24,34 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build debug APK
-        run: gradle assembleDebug --no-daemon
+      - name: Build signed Android APK
+        env:
+          APP_VERSION_CODE: ${{ github.run_number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          gradle assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk BusinessSoftwareERP.apk
+          test -s BusinessSoftwareERP.apk
 
-      - name: Upload APK
+      - name: Upload APK build artifact
         uses: actions/upload-artifact@v4
         with:
           name: BusinessSoftwareERP-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: BusinessSoftwareERP.apk
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish stable direct download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view android-latest >/dev/null 2>&1; then
+            gh release upload android-latest BusinessSoftwareERP.apk --clobber
+          else
+            gh release create android-latest BusinessSoftwareERP.apk \
+              --title "Android (latest)" \
+              --notes "Latest signed Android APK for Business Software ERP. Download BusinessSoftwareERP.apk and install it on your Android phone."
+          fi
 
       - name: Remove older Android APK artifacts
         env:
