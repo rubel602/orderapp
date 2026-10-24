@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'index.html'
-      - 'scripts/**'
+      - 'scripts/web-clean-ui.js'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -35,23 +35,24 @@ jobs:
           from pathlib import Path
           page = Path("web/index.html")
           html = page.read_text(encoding="utf-8")
-          scripts = [
-              Path("scripts/clean-ui.js").read_text(encoding="utf-8"),
-              Path("scripts/web-clean-ui.js").read_text(encoding="utf-8"),
-          ]
+          # Web-only cleanup is deliberately used instead of scripts/clean-ui.js,
+          # whose broad panel matching can hide the login screen.
+          script = Path("scripts/web-clean-ui.js").read_text(encoding="utf-8")
           nl = chr(10)
           closing = "</script>" + nl + "</body>" + nl + "</html>"
           close_at = html.rfind(closing)
           if close_at < 0:
               raise SystemExit("Could not find the final application script and HTML closing tags")
           body_end = close_at + len("</script>" + nl)
-          injection = "".join("<script>" + nl + script + nl + "</script>" + nl for script in scripts)
-          html = html[:body_end] + injection + html[body_end:]
+          html = html[:body_end] + "<script>" + nl + script + nl + "</script>" + nl + html[body_end:]
+          html = html.replace("<title>ERP Software</title>", "<title>Business ERP Software Samuday</title>")
           page.write_text(html, encoding="utf-8")
           if len(html) < 10000:
               raise SystemExit("Prepared web app unexpectedly looks empty")
-          if "User ID" not in html and "User ID" not in html.lower():
-              print("Warning: literal User ID label not found; app may use a different label.")
+          if 'id="lu"' not in html or 'id="lp"' not in html:
+              raise SystemExit("Login fields were not found in prepared web app")
+          if 'Dealer Portal →' not in html:
+              raise SystemExit("Dealer Portal link was not found in prepared web app")
           PY
           test -s web/index.html
           cat > web/404.html <<'EOF'
