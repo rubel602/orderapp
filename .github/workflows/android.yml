@@ -37,10 +37,14 @@ jobs:
           for filename in ("clean-ui.js", "clean-start.js"):
               script = Path("scripts/" + filename).read_text(encoding="utf-8")
               marker = "</body>"
-              if marker in html:
-                  html = html.replace(marker, "<script>\n" + script + "\n</script>\n" + marker, 1)
+              # The source contains literal </body> strings inside generated HTML templates.
+              # Insert only before the real document closing tag, not inside JavaScript strings.
+              html_end = html.rfind("</html>")
+              body_end = html.rfind(marker, 0, html_end) if html_end >= 0 else -1
+              if body_end >= 0:
+                  html = html[:body_end] + "<script>\\n" + script + "\\n</script>\\n" + html[body_end:]
               else:
-                  html += "\n<script>\n" + script + "\n</script>\n"
+                  raise SystemExit("Could not find the real HTML body closing tag")
           page.write_text(html, encoding="utf-8")
           PY
           test -s app/src/main/assets/index.html
