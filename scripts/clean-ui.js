@@ -24,6 +24,11 @@
     el.dataset.cleanUiHidden = '1';
   }
   function clean() {
+    // Keep the app name exactly "Business ERP Software".
+    document.title = 'Business ERP Software';
+    const appTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appTitle) appTitle.content = 'Business ERP Software';
+    document.querySelectorAll('.lgc h1').forEach((el) => { el.textContent = 'Business ERP Software'; });
     // Keep the login screen version consistent with the requested release label.
     document.querySelectorAll('body *').forEach((el) => {
       if (el.children.length === 0 && (el.textContent || '').replace(/\\s+/g, ' ').trim().toLowerCase() === 'version 03') {
