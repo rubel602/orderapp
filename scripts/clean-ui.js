@@ -24,6 +24,12 @@
     el.dataset.cleanUiHidden = '1';
   }
   function clean() {
+    // Keep the login screen version consistent with the requested release label.
+    document.querySelectorAll('body *').forEach((el) => {
+      if (el.children.length === 0 && (el.textContent || '').replace(/\\s+/g, ' ').trim().toLowerCase() === 'version 03') {
+        el.textContent = 'VERSION 02';
+      }
+    });
     // Hide only the dedicated restore-account panel, never a general login or portal container.
     const panelNeedles = [
       'restore account on this device',
