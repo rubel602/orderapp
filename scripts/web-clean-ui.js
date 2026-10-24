@@ -16,6 +16,10 @@
     const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if (meta) meta.content = 'Business ERP Software Samuday';
     document.querySelectorAll('.lgc h1').forEach(el => { el.textContent = 'Business ERP Software Samuday'; });
+    // Keep the requested version label consistent on the web login screen.
+    document.querySelectorAll('body *').forEach(el => {
+      if (el.children.length === 0 && norm(el.textContent) === 'version 03') el.textContent = 'VERSION 02';
+    });
     // Hide only the dedicated restore/setup card, never its login form parent.
     document.querySelectorAll('.lgc > .card, .lgc .card').forEach(el => {
       const t = norm(el.innerText || el.textContent);
