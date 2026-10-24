@@ -28,6 +28,18 @@ jobs:
         run: |
           mkdir -p app/src/main/assets
           cp index.html app/src/main/assets/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          page = Path("app/src/main/assets/index.html")
+          html = page.read_text(encoding="utf-8")
+          script = Path("scripts/clean-ui.js").read_text(encoding="utf-8")
+          marker = "</body>"
+          if marker in html:
+              html = html.replace(marker, "<script>\\n" + script + "\\n</script>\\n" + marker, 1)
+          else:
+              html += "\\n<script>\\n" + script + "\\n</script>\\n"
+          page.write_text(html, encoding="utf-8")
+          PY
           test -s app/src/main/assets/index.html
 
       - name: Build signed Android APK
