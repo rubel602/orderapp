@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use the shared index.html
+      - name: Use the shared source and clean UI
         run: |
           mkdir -p windows/app
           cp index.html windows/app/index.html
@@ -29,12 +29,13 @@ jobs:
           from pathlib import Path
           page = Path("windows/app/index.html")
           html = page.read_text(encoding="utf-8")
-          script = Path("scripts/clean-ui.js").read_text(encoding="utf-8")
-          marker = "</body>"
-          if marker in html:
-              html = html.replace(marker, "<script>\\n" + script + "\\n</script>\\n" + marker, 1)
-          else:
-              html += "\\n<script>\\n" + script + "\\n</script>\\n"
+          for filename in ("clean-ui.js", "clean-start.js"):
+              script = Path("scripts/" + filename).read_text(encoding="utf-8")
+              marker = "</body>"
+              if marker in html:
+                  html = html.replace(marker, "<script>\n" + script + "\n</script>\n" + marker, 1)
+              else:
+                  html += "\n<script>\n" + script + "\n</script>\n"
           page.write_text(html, encoding="utf-8")
           PY
 
@@ -64,7 +65,7 @@ jobs:
 
       - name: Publish only the newest Windows version
         run: |
-          gh release view win-latest >/dev/null 2>&1 || gh release create win-latest --title "Windows (latest)" --notes "Always the newest Windows installer. The app updates itself from here."
+          gh release view win-latest >/dev/null 2>&1 || gh release create win-latest --title "Windows (latest)" --notes "Clean-start Windows installer. The app updates itself from here."
           gh release upload win-latest windows/dist/latest.yml windows/dist/BusinessSoftwareERP-Setup-*.exe windows/dist/BusinessSoftwareERP-Portable-*.exe --clobber
           current_version="1.0.${{ github.run_number }}"
           gh release view win-latest --json assets --jq '.assets[].name' | while IFS= read -r asset; do
