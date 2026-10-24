@@ -7,6 +7,8 @@
     if (typeof SFG === 'undefined' || typeof sfDo !== 'function' || typeof save !== 'function') return;
     // Preserve a recovery snapshot when the app's snapshot facility is available.
     const done = function () {
+      // Prevent old Google Sheet demo data from being pulled back automatically.
+      localStorage.removeItem('bs_gs');
       sfDo(SFG.map(function (g) { return g[0]; }));
       if (typeof fix === 'function') fix();
       save();
