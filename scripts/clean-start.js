@@ -1,7 +1,6 @@
-/* One-time clean start for the owner's requested fresh install.
-   Keep accounts/roles and business configuration; clear operational/demo records. */
+/* One-time full clean start requested by the owner: clear app-side records and prevent old local Google Sheet settings from syncing back. */
 (function () {
-  const marker = 'bs_clean_start_v1';
+  const marker = 'bs_clean_start_v2';
   try {
     if (localStorage.getItem(marker) === '1') return;
     if (typeof SFG === 'undefined' || typeof sfDo !== 'function' || typeof save !== 'function') return;
