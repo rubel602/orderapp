@@ -20,6 +20,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Use the shared source and clean UI
         run: |
@@ -50,7 +52,7 @@ jobs:
       - name: Set version and update address
         working-directory: windows
         run: |
-          npm version 1.0.${{ github.run_number }} --no-git-tag-version
+          npm version 1.0.$(git rev-list --count HEAD) --no-git-tag-version
           node -e "const fs=require('fs'),p=JSON.parse(fs.readFileSync('package.json'));p.build.publish.url='https://github.com/${{ github.repository }}/releases/download/win-latest';fs.writeFileSync('package.json',JSON.stringify(p,null,2))"
 
       - name: Build EXE
@@ -67,7 +69,7 @@ jobs:
         run: |
           gh release view win-latest >/dev/null 2>&1 || gh release create win-latest --title "Windows (latest)" --notes "Clean-start Windows installer. The app updates itself from here."
           gh release upload win-latest windows/dist/latest.yml windows/dist/BusinessSoftwareERP-Setup-*.exe windows/dist/BusinessSoftwareERP-Portable-*.exe --clobber
-          current_version="1.0.${{ github.run_number }}"
+          current_version="1.0.$(git rev-list --count HEAD)"
           gh release view win-latest --json assets --jq '.assets[].name' | while IFS= read -r asset; do
             case "$asset" in
               latest.yml|"BusinessSoftwareERP-Setup-$current_version.exe"|"BusinessSoftwareERP-Portable-$current_version.exe") ;;
