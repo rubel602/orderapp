@@ -11,6 +11,7 @@
       if (typeof fix === 'function') fix();
       save();
       localStorage.setItem(marker, '1');
+      if (typeof render === 'function') render();
     };
     if (typeof snapPut === 'function') {
       Promise.resolve(snapPut('Before clean start')).then(done).catch(done);
