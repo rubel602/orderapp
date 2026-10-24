@@ -36,15 +36,15 @@ jobs:
           html = page.read_text(encoding="utf-8")
           for filename in ("clean-ui.js", "clean-start.js"):
               script = Path("scripts/" + filename).read_text(encoding="utf-8")
-              marker = "</body>"
-              # The source contains literal </body> strings inside generated HTML templates.
-              # Insert only before the real document closing tag, not inside JavaScript strings.
-              html_end = html.rfind("</html>")
-              body_end = html.rfind(marker, 0, html_end) if html_end >= 0 else -1
-              if body_end >= 0:
+              # The source contains literal closing tags inside generated HTML templates.
+              # Anchor to the real final application script, not an embedded template string.
+              closing = "</script>\\n</body>\\n</html>"
+              close_at = html.rfind(closing)
+              if close_at >= 0:
+                  body_end = close_at + len("</script>\\n")
                   html = html[:body_end] + "<script>\\n" + script + "\\n</script>\\n" + html[body_end:]
               else:
-                  raise SystemExit("Could not find the real HTML body closing tag")
+                  raise SystemExit("Could not find the real HTML closing section")
           page.write_text(html, encoding="utf-8")
           PY
           test -s app/src/main/assets/index.html
