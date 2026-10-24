@@ -1,0 +1,75 @@
+name: Deploy Business ERP Software Samuday Web
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - 'scripts/**'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare web app
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p web
+          cp index.html web/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          page = Path("web/index.html")
+          html = page.read_text(encoding="utf-8")
+          scripts = [
+              Path("scripts/clean-ui.js").read_text(encoding="utf-8"),
+              Path("scripts/web-clean-ui.js").read_text(encoding="utf-8"),
+          ]
+          nl = chr(10)
+          closing = "</script>" + nl + "</body>" + nl + "</html>"
+          close_at = html.rfind(closing)
+          if close_at < 0:
+              raise SystemExit("Could not find the final application script and HTML closing tags")
+          body_end = close_at + len("</script>" + nl)
+          injection = "".join("<script>" + nl + script + nl + "</script>" + nl for script in scripts)
+          html = html[:body_end] + injection + html[body_end:]
+          page.write_text(html, encoding="utf-8")
+          if len(html) < 10000:
+              raise SystemExit("Prepared web app unexpectedly looks empty")
+          if "User ID" not in html and "User ID" not in html.lower():
+              print("Warning: literal User ID label not found; app may use a different label.")
+          PY
+          test -s web/index.html
+          cat > web/404.html <<'EOF'
+          <!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Business ERP Software Samuday</title><body><p>Page not found. <a href="./">Open Business ERP Software Samuday</a></p></body></html>
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
