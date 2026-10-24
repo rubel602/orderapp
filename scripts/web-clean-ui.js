@@ -1,4 +1,4 @@
-/* Web-only login presentation for Business ERP Software Samuday.
+/* Web-only login presentation for Business ERP Software.
    Do not run the shared clean-ui.js here: its broad panel matching can hide the whole login area.
    Keep Employee Sign In and Dealer Portal available. */
 (function () {
@@ -12,10 +12,10 @@
     el.dataset.samudayHidden = '1';
   };
   function clean() {
-    document.title = 'Business ERP Software Samuday';
+    document.title = 'Business ERP Software';
     const meta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-    if (meta) meta.content = 'Business ERP Software Samuday';
-    document.querySelectorAll('.lgc h1').forEach(el => { el.textContent = 'Business ERP Software Samuday'; });
+    if (meta) meta.content = 'Business ERP Software';
+    document.querySelectorAll('.lgc h1').forEach(el => { el.textContent = 'Business ERP Software'; });
     // Keep the requested version label consistent on the web login screen.
     document.querySelectorAll('body *').forEach(el => {
       if (el.children.length === 0 && norm(el.textContent) === 'version 03') el.textContent = 'VERSION 02';
