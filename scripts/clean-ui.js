@@ -1,49 +1,65 @@
-/* Shared clean UI policy for Android and Windows builds. */
+/* Shared clean UI policy for Android and Windows builds.
+   Hide unwanted account/restore/exit/skip controls even when text is wrapped
+   or the label has extra words (for example "Skip web"). */
 (function () {
   if (window.__businessSoftwareCleanUiInstalled) return;
   window.__businessSoftwareCleanUiInstalled = true;
 
   const unwanted = [
-    "register account",
-    "register",
-    "excited",
-    "exit",
-    "skip",
-    "restore account on this device",
-    "restore from google sheet",
-    "apps script url",
-    "secret key"
+    /\\bregister(?:\\s+account)?\\b/i,
+    /\\bexit\\b/i,
+    /\\bskip(?:\\s+web)?\\b/i,
+    /\\brestore account on this device\\b/i,
+    /\\brestore from google sheet\\b/i,
+    /\\bapps script(?: web app)? url\\b/i,
+    /\\bsecret key\\b/i,
+    /\\bexcited\\b/i
   ];
+  const controls = 'button, a, [role="button"], input[type="button"], input[type="submit"]';
+  const smallText = 'label, small, p, span';
+
+  function textOf(el) {
+    return (el.innerText || el.value || el.getAttribute('aria-label') || '')
+      .replace(/\\s+/g, ' ').trim();
+  }
+
+  function matches(text) {
+    return unwanted.some((pattern) => pattern.test(text));
+  }
+
+  function hide(el) {
+    if (!el || el.dataset.cleanUiHidden === '1') return;
+    el.style.setProperty('display', 'none', 'important');
+    el.setAttribute('aria-hidden', 'true');
+    el.dataset.cleanUiHidden = '1';
+  }
 
   function clean() {
-    const candidates = document.querySelectorAll(
-      'button, a, [role="button"], input[type="button"], input[type="submit"], label, small, p, span, div, section, aside'
-    );
-    candidates.forEach((el) => {
-      if (!el || el.dataset.cleanUiChecked === "1") return;
-      const raw = (el.innerText || el.value || el.getAttribute("aria-label") || "")
-        .replace(/\s+/g, " ").trim().toLowerCase();
-      if (!raw || raw.length > 100) return;
-      const match = unwanted.find((word) => raw === word || raw === word + "?" || raw === word + ":");
-      if (!match) return;
+    document.querySelectorAll(controls).forEach((el) => {
+      const text = textOf(el);
+      if (text && text.length <= 160 && matches(text)) hide(el);
+    });
 
-      // Hide the control itself; for restore/settings field labels, hide its compact
-      // surrounding row so the associated URL/key input does not remain orphaned.
-      let target = el;
-      if (/^(label|small|p|span)$/.test(el.tagName.toLowerCase())) {
-        const parent = el.parentElement;
-        if (parent && parent.children.length <= 4 && parent.innerText.length < 180) target = parent;
-      }
-      target.style.setProperty("display", "none", "important");
-      target.setAttribute("aria-hidden", "true");
-      target.dataset.cleanUiChecked = "1";
+    document.querySelectorAll(smallText).forEach((el) => {
+      const text = textOf(el);
+      if (!text || text.length > 100 || !matches(text)) return;
+      const parent = el.parentElement;
+      // Hide the compact row for restore/settings labels, not a whole page section.
+      if (parent && parent.children.length <= 5 && textOf(parent).length <= 220) hide(parent);
+      else hide(el);
+    });
+
+    // Catch standalone text-only chips/rows such as "Skip web" that are not buttons.
+    document.querySelectorAll('div, section, aside').forEach((el) => {
+      if (el.dataset.cleanUiHidden === '1') return;
+      const text = textOf(el);
+      if (!text || text.length > 80 || !matches(text)) return;
+      if (el.children.length <= 2) hide(el);
     });
   }
 
   clean();
   const observer = new MutationObserver(clean);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
-  document.addEventListener("DOMContentLoaded", clean);
-  setTimeout(clean, 300);
-  setTimeout(clean, 1200);
+  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  document.addEventListener('DOMContentLoaded', clean);
 })();
