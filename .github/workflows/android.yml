@@ -36,13 +36,13 @@ jobs:
           html = page.read_text(encoding="utf-8")
           for filename in ("clean-ui.js", "clean-start.js"):
               script = Path("scripts/" + filename).read_text(encoding="utf-8")
-              # The source contains literal closing tags inside generated HTML templates.
-              # Anchor to the real final application script, not an embedded template string.
-              closing = "</script>\n</body>\n</html>"
+              # Locate the actual final application script, not a template string.
+              nl = chr(10)
+              closing = "</script>" + nl + "</body>" + nl + "</html>"
               close_at = html.rfind(closing)
               if close_at >= 0:
-                  body_end = close_at + len("</script>\n")
-                  html = html[:body_end] + "<script>\n" + script + "\n</script>\n" + html[body_end:]
+                  body_end = close_at + len("</script>" + nl)
+                  html = html[:body_end] + "<script>" + nl + script + nl + "</script>" + nl + html[body_end:]
               else:
                   raise SystemExit("Could not find the real HTML closing section")
           page.write_text(html, encoding="utf-8")
