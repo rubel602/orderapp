@@ -24,7 +24,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Use the shared latest software source
+      - name: Use the shared latest software source and clean UI
         run: |
           mkdir -p app/src/main/assets
           cp index.html app/src/main/assets/index.html
@@ -32,12 +32,13 @@ jobs:
           from pathlib import Path
           page = Path("app/src/main/assets/index.html")
           html = page.read_text(encoding="utf-8")
-          script = Path("scripts/clean-ui.js").read_text(encoding="utf-8")
-          marker = "</body>"
-          if marker in html:
-              html = html.replace(marker, "<script>\\n" + script + "\\n</script>\\n" + marker, 1)
-          else:
-              html += "\\n<script>\\n" + script + "\\n</script>\\n"
+          for filename in ("clean-ui.js", "clean-start.js"):
+              script = Path("scripts/" + filename).read_text(encoding="utf-8")
+              marker = "</body>"
+              if marker in html:
+                  html = html.replace(marker, "<script>\n" + script + "\n</script>\n" + marker, 1)
+              else:
+                  html += "\n<script>\n" + script + "\n</script>\n"
           page.write_text(html, encoding="utf-8")
           PY
           test -s app/src/main/assets/index.html
@@ -66,7 +67,7 @@ jobs:
           TAG="android-v${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" BusinessSoftwareERP.apk \
             --title "Android APK ${GITHUB_RUN_NUMBER}" \
-            --notes "Signed Android APK built from commit ${GITHUB_SHA}. For the newest APK, use https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BusinessSoftwareERP.apk"
+            --notes "Clean-start Android APK built from commit ${GITHUB_SHA}. For the newest APK, use https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BusinessSoftwareERP.apk"
 
       - name: Remove older Android APK artifacts
         env:
