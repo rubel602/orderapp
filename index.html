@@ -225,7 +225,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}body{overflow-x:clip}
 <div id="pdoc" class="pr"></div><div id="toast" role="status"></div>
 <script>
 const K='bizsoft_v1';
-const APP_VER=15;const APP_LBL=String(2).padStart(2,"0");
+const APP_VER=16;const APP_LBL=String(2).padStart(2,"0");
 const MODS=['Dashboard','POS Sales','Sales Order','Local Purchase','Foreign Purchase','Inventory','Products','Production','Expense','Easy Accounts','Settings','Reports','Distribution','HR & Payroll','Attendance','Damage Report','User Administration','Data Backup'];
 function seed(){return{p:[{id:1,n:'Rice 5kg',pr:420,c:360,s:40,low:10,d:0},{id:2,n:'Soybean Oil 1L',pr:190,c:165,s:8,low:10,d:1},{id:3,n:'Sugar 1kg',pr:130,c:112,s:60,low:15,d:0}],cu:[{id:1,n:'Walk-in',due:0},{id:2,n:'Rahim Store',due:1500}],su:[{id:1,n:'City Traders',due:3000}],sa:[],pu:[],ex:[],cash:20000,bank:50000,asset:0,inv:0,loan:0}}
 let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
@@ -6442,7 +6442,8 @@ async function sfRun(){if(!isAdm())return toast('Only an administrator can do th
 
 /* Google Sheet sync (Apps Script web app) */
 const GSK='bs_gs';let GSL=null,GSB=0;
-const GS_DEF='https://script.google.com/macros/s/AKfycbyAKvuRIxHEUBjFYoG-Pv-onSzSFTeEEPt2qtAsiDMKSpmf2tSOsKs_6GELZDG7hW6vhg/exec';
+const GS_DEF='https://script.google.com/macros/s/AKfycbzKTEKeWi7JSHcx-qdXfYFHGv1x14X_zknILhIiBwYk7CrHwTFwWIiMp6ALL0k6kFPXEg/exec';
+try{const c0=JSON.parse(localStorage.getItem('bs_gs')||'null');if(c0&&c0.url==='https://script.google.com/macros/s/AKfycbyAKvuRIxHEUBjFYoG-Pv-onSzSFTeEEPt2qtAsiDMKSpmf2tSOsKs_6GELZDG7hW6vhg/exec'){c0.url='https://script.google.com/macros/s/AKfycbzKTEKeWi7JSHcx-qdXfYFHGv1x14X_zknILhIiBwYk7CrHwTFwWIiMp6ALL0k6kFPXEg/exec';localStorage.setItem('bs_gs',JSON.stringify(c0))}}catch(e){}
 const gsCfg=()=>{let c={};try{c=JSON.parse(localStorage.getItem(GSK))||{}}catch(e){}if(!c.url)c.url=GS_DEF;return c};
 const gsSet=o=>{try{localStorage.setItem(GSK,JSON.stringify({...gsCfg(),...o}))}catch(e){}};
 async function gsCall(body){const c=gsCfg();if(!c.url||!c.key)throw new Error('Enter the Apps Script link and key first');
