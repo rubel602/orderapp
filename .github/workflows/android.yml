@@ -5,11 +5,19 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Use the shared latest index.html
+        run: |
+          mkdir -p app/src/main/assets
+          cp index.html app/src/main/assets/index.html
 
       - uses: actions/setup-java@v4
         with:
@@ -21,6 +29,9 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build debug APK
+        env:
+          APP_VERSION_CODE: ${{ github.run_number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
